@@ -15,8 +15,8 @@ public class AirportRepository {
     Map<Integer, Passenger> passengerMap = new HashMap<>();
     Map<Integer, Flight> flightMap = new HashMap<>();
 
-    Map<String, List<Flight>> cityDepartures = new HashMap<>();
-    Map<String, List<Flight>> cityArrivals = new HashMap<>();
+    Map<String, List<Flight>> cityDeparturesMap = new HashMap<>();
+    Map<String, List<Flight>> cityArrivalsMap = new HashMap<>();
 
     Map<Integer, List<Passenger>> bookingsByFlight = new HashMap<>();
     Map<Integer, List<Flight>> bookingsByPassenger = new HashMap<>();
@@ -38,6 +38,17 @@ public class AirportRepository {
     public String addFlight(Flight newFlight) {
         int id = newFlight.getFlightId();
         flightMap.put(id, newFlight);
+
+        String departureCityName = newFlight.getFromCity().toString();
+        String arrivalCityName = newFlight.getToCity().toString();
+
+        List<Flight> departingFLightsList= cityDeparturesMap.getOrDefault(departureCityName, new ArrayList<>());
+        departingFLightsList.add(newFlight);
+        cityDeparturesMap.put(departureCityName, departingFLightsList);
+
+        List<Flight> arrivingFlightsList = cityArrivalsMap.getOrDefault(arrivalCityName, new ArrayList<>());
+        arrivingFlightsList.add(newFlight);
+        cityArrivalsMap.put(arrivalCityName, arrivingFlightsList);
 
         return "SUCCESS";
     }
@@ -65,7 +76,7 @@ public class AirportRepository {
         if(numberOfBookings_Flight >= flight.getMaxCapacity())
             return "FAILURE";
 
-        if(bookingsList_Passenger.contains(flightId))
+        if(bookingsList_Passenger.contains(flight))
             return "FAILURE";
 
         bookingsList_Flight.add(passenger);
@@ -86,7 +97,7 @@ public class AirportRepository {
         List<Passenger> bookingsList_Flight = bookingsByFlight.getOrDefault(flightId, new ArrayList<>());
         List<Flight> bookingsList_Passenger = bookingsByPassenger.getOrDefault(passengerId, new ArrayList<>());
 
-        if(!bookingsList_Passenger.contains(flightId)) return "FAILURE";
+        if(!bookingsList_Passenger.contains(flight)) return "FAILURE";
 
         bookingsList_Flight.remove(passenger);
         bookingsList_Passenger.remove(flight);
@@ -169,7 +180,7 @@ public class AirportRepository {
         */
 
         double leastTime = Double.MAX_VALUE;
-        for(Flight flight : cityDepartures.get(src)) {
+        for(Flight flight : cityDeparturesMap.get(src)) {
 
             String flightDest = flight.getToCity().toString();
             if(flightDest.equals(dest)) {
@@ -189,7 +200,7 @@ public class AirportRepository {
         int departingPassengers = 0;
 
         //count passengers on arriving flights
-        for(Flight flight : cityArrivals.get(cityName)) {
+        for(Flight flight : cityArrivalsMap.get(cityName)) {
             if(flight.getFlightDate().equals(date)) {
 
                 int id = flight.getFlightId();
@@ -199,7 +210,7 @@ public class AirportRepository {
         }
 
         //count passengers waiting for departing flights
-        for(Flight flight : cityDepartures.get(cityName)) {
+        for(Flight flight : cityDeparturesMap.get(cityName)) {
 
             if(flight.getFlightDate().equals(date)) {
 
@@ -221,7 +232,7 @@ public class AirportRepository {
                 return airport.getAirportName();
             }
         }
-        return null;
+        return "";
     }
 
     public int calculateRevenue(int flightId) {

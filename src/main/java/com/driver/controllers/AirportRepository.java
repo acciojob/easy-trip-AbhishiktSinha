@@ -261,7 +261,7 @@ public class AirportRepository {
 
         if(n == 0) return 0;
 
-        int revenue = (3000 * n) + 50 * (n-1 * n/2);
+        int revenue = n * (3000 + (3000 + 50 * (n-1))) / 2;
 
         return revenue;
     }

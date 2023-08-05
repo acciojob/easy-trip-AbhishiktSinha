@@ -20,14 +20,14 @@ public class AirportRepository {
 
     Map<Integer, List<Passenger>> bookingsByFlight = new HashMap<>();
     Map<Integer, List<Flight>> bookingsByPassenger = new HashMap<>();
-    Set<String> cityAirport = new HashSet<>();
+    Set<String> cityWithAirport = new HashSet<>();
 
     public String addAirport(Airport airport) {
         String name = airport.getAirportName();
         airportMap.put(name, airport);
 
         String cityName = airport.getCity().toString();
-        cityAirport.add(cityName);
+        cityWithAirport.add(cityName);
 
         return "SUCCESS";
     }
@@ -185,7 +185,7 @@ public class AirportRepository {
 
         double leastTime = Double.MAX_VALUE;
 
-        if(!cityAirport.contains(src) || !cityAirport.contains(dest)) return leastTime;
+        if(!cityWithAirport.contains(src) || !cityWithAirport.contains(dest)) return leastTime;
         if(!cityDeparturesMap.containsKey(src) || !cityArrivalsMap.containsKey(dest)) return leastTime;
 
         for(Flight flight : cityDeparturesMap.get(src)) {
@@ -200,16 +200,19 @@ public class AirportRepository {
     }
 
     public int peopleOnAirportOnDate(Date date, String airportName) {
+        if(!airportMap.containsKey(airportName)) return 0;
+
         Airport airport = airportMap.get(airportName);
         int totalPassengers = 0;
 
-        if(airport != null) {
-            String cityName = airport.getCity().toString();
+        String cityName = airport.getCity().toString();
 
-            int arrivingPassengers = 0;
-            int departingPassengers = 0;
+        int arrivingPassengers = 0;
+        int departingPassengers = 0;
 
-            //count passengers on arriving flights
+        //count passengers on arriving flights
+        if(cityArrivalsMap.containsKey(cityName)) {
+
             for (Flight flight : cityArrivalsMap.get(cityName)) {
                 if (flight.getFlightDate().equals(date)) {
 
@@ -218,10 +221,12 @@ public class AirportRepository {
                     arrivingPassengers += passengersOnBoard;
                 }
             }
+        }
 
-            //count passengers waiting for departing flights
+        //count passengers waiting for departing flights
+        if(cityDeparturesMap.containsKey(cityName)) {
+
             for (Flight flight : cityDeparturesMap.get(cityName)) {
-
                 if (flight.getFlightDate().equals(date)) {
 
                     int id = flight.getFlightId();
@@ -229,8 +234,9 @@ public class AirportRepository {
                     departingPassengers += passengersOnBoard;
                 }
             }
-            totalPassengers = arrivingPassengers + departingPassengers;
         }
+        totalPassengers = arrivingPassengers + departingPassengers;
+
         return totalPassengers;
     }
 
@@ -240,7 +246,7 @@ public class AirportRepository {
         Flight flight = flightMap.get(flightId);
         String cityName = flight.getFromCity().toString();
 
-        if(!cityAirport.contains(cityName)) return null;
+        if(!cityWithAirport.contains(cityName)) return null;
 
         for(Airport airport : airportMap.values()) {
             if(airport.getCity().toString().equals(cityName)){

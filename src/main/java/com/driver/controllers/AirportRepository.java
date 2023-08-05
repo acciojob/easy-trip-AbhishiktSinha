@@ -20,10 +20,14 @@ public class AirportRepository {
 
     Map<Integer, List<Passenger>> bookingsByFlight = new HashMap<>();
     Map<Integer, List<Flight>> bookingsByPassenger = new HashMap<>();
+    Set<String> cityAirport = new HashSet<>();
 
     public String addAirport(Airport airport) {
         String name = airport.getAirportName();
         airportMap.put(name, airport);
+
+        String cityName = airport.getCity().toString();
+        cityAirport.add(cityName);
 
         return "SUCCESS";
     }
@@ -180,6 +184,10 @@ public class AirportRepository {
         */
 
         double leastTime = Double.MAX_VALUE;
+
+        if(!cityAirport.contains(src) || !cityAirport.contains(dest)) return leastTime;
+        if(!cityDeparturesMap.containsKey(src) || !cityArrivalsMap.containsKey(dest)) return leastTime;
+
         for(Flight flight : cityDeparturesMap.get(src)) {
 
             String flightDest = flight.getToCity().toString();
@@ -193,46 +201,53 @@ public class AirportRepository {
 
     public int peopleOnAirportOnDate(Date date, String airportName) {
         Airport airport = airportMap.get(airportName);
+        int totalPassengers = 0;
 
-        String cityName = airport.getCity().toString();
+        if(airport != null) {
+            String cityName = airport.getCity().toString();
 
-        int arrivingPassengers = 0;
-        int departingPassengers = 0;
+            int arrivingPassengers = 0;
+            int departingPassengers = 0;
 
-        //count passengers on arriving flights
-        for(Flight flight : cityArrivalsMap.get(cityName)) {
-            if(flight.getFlightDate().equals(date)) {
+            //count passengers on arriving flights
+            for (Flight flight : cityArrivalsMap.get(cityName)) {
+                if (flight.getFlightDate().equals(date)) {
 
-                int id = flight.getFlightId();
-                int passengersOnBoard = bookingsByFlight.getOrDefault(id, new ArrayList<>()).size();
-                arrivingPassengers += passengersOnBoard;
+                    int id = flight.getFlightId();
+                    int passengersOnBoard = bookingsByFlight.getOrDefault(id, new ArrayList<>()).size();
+                    arrivingPassengers += passengersOnBoard;
+                }
             }
-        }
 
-        //count passengers waiting for departing flights
-        for(Flight flight : cityDeparturesMap.get(cityName)) {
+            //count passengers waiting for departing flights
+            for (Flight flight : cityDeparturesMap.get(cityName)) {
 
-            if(flight.getFlightDate().equals(date)) {
+                if (flight.getFlightDate().equals(date)) {
 
-                int id = flight.getFlightId();
-                int passengersOnBoard = bookingsByFlight.getOrDefault(id, new ArrayList<>()).size();
-                departingPassengers += passengersOnBoard;
+                    int id = flight.getFlightId();
+                    int passengersOnBoard = bookingsByFlight.getOrDefault(id, new ArrayList<>()).size();
+                    departingPassengers += passengersOnBoard;
+                }
             }
+            totalPassengers = arrivingPassengers + departingPassengers;
         }
-        int totalPassengers = arrivingPassengers + departingPassengers;
         return totalPassengers;
     }
 
     public String getDepartureAirportName(int flightId) {
+        if(!flightMap.containsKey(flightId)) return null;
+
         Flight flight = flightMap.get(flightId);
         String cityName = flight.getFromCity().toString();
+
+        if(!cityAirport.contains(cityName)) return null;
 
         for(Airport airport : airportMap.values()) {
             if(airport.getCity().toString().equals(cityName)){
                 return airport.getAirportName();
             }
         }
-        return "";
+        return null;
     }
 
     public int calculateRevenue(int flightId) {
@@ -240,7 +255,7 @@ public class AirportRepository {
 
         if(n == 0) return 0;
 
-        int revenue = (3000 * n) + 50 * n * (n * (n + 1)/2);
+        int revenue = (3000 * n) + 50 * (n-1) * (n-1 * n/2);
 
         return revenue;
     }
